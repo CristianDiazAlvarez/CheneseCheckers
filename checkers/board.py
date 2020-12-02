@@ -13,14 +13,13 @@ class Board:
         self.red_left = self.white_left = 10
         self.create_board()
 
-    def draw_squares(self, win):
+    def draw_circles(self, win):
         win.fill(WHITE)
         radius = SQUARE_SIZE // 2 - self.PADDING
 
         for row in range(ROWS):
             for col in range(COLS):
                 pygame.draw.rect(win, GREY, (row * SQUARE_SIZE, col * SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE))
-                #  pygame.draw.circle(win, GREY, ((row *SQUARE_SIZE) + SQUARE_SIZE//2, (col *SQUARE_SIZE) + SQUARE_SIZE//2), radius + self.OUTLINE)
                 pygame.draw.circle(win, WHITE, ((row * SQUARE_SIZE) + SQUARE_SIZE//2, (col * SQUARE_SIZE) + SQUARE_SIZE//2), radius)
 
     def move(self, piece, row, col):
@@ -32,9 +31,9 @@ class Board:
         return self.board[row][col]
 
     def create_board(self):
-        row_count = 8
+        row_count = 4
         col_count = 4
-        col_c = 21
+        col_c = 13
         for row in range(ROWS):
             self.board.append([])
             for col in range(COLS):
@@ -49,192 +48,98 @@ class Board:
             col_count -= 1
 
     def draw(self, win):
-        self.draw_squares(win)
+        self.draw_circles(win)
         for row in range(ROWS):
             for col in range(COLS):
                 piece = self.board[row][col]
                 if piece != 0:
                     piece.draw(win)
+    
+    def get_neighborhood(self, row, col):
+        neighborhood = [
+            [row - 1, col],
+            [row - 1, col + 1],
+            [row, col - 1],
+            [row, col + 1],
+            [row + 1, col - 1],
+            [row + 1, col]
+            ]
+        return neighborhood
 
     def get_valid_moves(self, piece):
         moves = {}
-        left = piece.col - 1
-        right = piece.col + 1
-        vert =  piece.col
+        col =  piece.col
         row = piece.row
         print(piece.color)
+        
+        neighborhood = self.get_neighborhood(row, col)
 
-        if piece.color == RED:
-            moves.update(self._traverse_left(row - 1, max(row - 3, -1), -1, piece.color, left))
-            moves.update(self._traverse_right(row - 1, max(row - 3, -1), -1, piece.color, right))
-            moves.update((self._traverse_vert(row - 1, max(row - 3, -1), -1, piece.color, vert)))
-            moves.update(self._traverse_just_left(row, max(row -3, -1), -1, piece.color, left))
-            moves.update(self._traverse_just_right(row, max(row - 3, -1), -1, piece.color, right))
+        moves.update(self._traverse(neighborhood))
 
-        if piece.color == BLUE:
-            moves.update(self._traverse_left(row + 1, min(row + 3, ROWS), 1, piece.color, left))
-            moves.update(self._traverse_right(row + 1, min(row + 3, ROWS), 1, piece.color, right))
-            moves.update((self._traverse_vert(row + 1, max(row + 3, ROWS), 1, piece.color, vert)))
-            moves.update((self._traverse_just_left(row, max(row + 3, ROWS), 1, piece.color, left)))
-            moves.update((self._traverse_just_right(row, max(row + 3, ROWS), 1, piece.color, right)))
+        #moves.update(self._traverse_right(row - 1, max(row - 3, -1), -1, piece.color, right))
+        #moves.update(self._traverse_left(row + 1, min(row + 3, ROWS), 1, piece.color, left))
+        #moves.update(self._traverse_Y(row, max(row - 3, -1), -1, piece.color, col))
+        #moves.update(self._traverse_Y(row, max(row - 3, -1), 1, piece.color, col))
+        #moves.update(self._traverse_Y(row, min(row + 3, ROWS), 1, piece.color, col))
+        #moves.update(self._traverse_Y(row, min(row + 3, ROWS), -1, piece.color, col))
+
         return moves
 
-    def _traverse_left(self, start, stop, step, color, left, skipped=[]):
+    def _traverse(self, neighborhood, skipped=[]):
         moves = {}
-        last = []
-        for r in range(start, stop, step):
-            if left < 0:
-                break
-            current = self.board[r][left]
+        for idx, rowcol in enumerate(neighborhood):
+            row = rowcol[0]
+            col = rowcol[1]
 
-            if current == 0:
-                if skipped and not last:
-                    break # Valida que si ya salto y no hay otra ficha para saltar no mueve otra ficha
-                elif skipped:
-                    moves[(r, left)] = last + skipped
-                else:
-                    moves[(r, left)] = last
-                if last:
-                    if step == -1:
-                        row = max(r-3, 0)
-                    else:
-                        row = min(r+3, ROWS)
+            if self.is_inside_board(row, col):
 
-                    moves.update(self._traverse_left(r + step, row, step, color, left - 1, skipped=last))
-                    moves.update(self._traverse_right(r + step, row, step, color, left + 1, skipped=last))
-                    moves.update(self._traverse_vert(r + step, row, step, color, left, skipped=last))
-                    moves.update(self._traverse_just_left(r + step, row, step, color, left -1, skipped=last))
-                    moves.update(self._traverse_just_right(r + step, row, step, color, left +1, skipped=last))
-                break
+                current = self.board[row][col]
 
-            last = [current]
-            left -= 1
+                if current == 0 and not((row, col) in moves):
+                    moves[(row, col)] = True
+                else: #Si Current no es 0 hay una ficha que puedo saltar.
+                    if idx == 1 or idx == 3:
+                        col+=1
+                    if idx == 2 or idx == 4:
+                        col-=1
+                    if idx == 0 or idx == 1:
+                        row-=1
+                    if idx == 4 or idx == 5:
+                        row+=1
+                    
+                    if self.is_inside_board(row, col): # si esta fuera del tablero, pass
+                        if self.board[row][col] == 0 and not((row, col) in moves):
+                            moves[(row, col)] = True
+                            self.check_jump(row, col, moves)
+                
+                
+                #jump
+                #check more jumps in new position
 
         return moves
 
-    def _traverse_right(self, start, stop, step, color, right, skipped=[]):
-        moves = {}
-        last = []
-        for r in range(start, stop, step):
-            if right >= COLS:
-                break
-            current = self.board[r][right]
-            if current == 0:
-                if skipped and not last:
-                    break  # Valida que si ya salto y no hay otra ficha para saltar no mueve otra ficha
-                elif skipped:
-                    moves[(r, right)] = last + skipped
+    def is_inside_board(self, row, col):
+        return not(col >= COLS or row >= ROWS or col < 0 or row < 0)
+
+    def check_jump(self, row, col, moves):
+        neighborhood = self.get_neighborhood(row, col)
+        for idx, rowcol in enumerate(neighborhood):
+            rowMove = rowcol[0]
+            colMove = rowcol[1]
+            if(self.is_inside_board(rowMove, colMove)):
+                current = self.board[rowMove][colMove]            
+                if current == 0:
+                    pass
                 else:
-                    moves[(r, right)] = last
-                if last:
-                    if step == -1:
-                        row = max(r - 3, 0)
-                    else:
-                        row = min(r + 3, ROWS)
-
-                    moves.update(self._traverse_left(r + step, row, step, color, right - 1, skipped=last))
-                    moves.update(self._traverse_right(r + step, row, step, color, right + 1, skipped=last))
-                    moves.update(self._traverse_vert(r + step, row, step, color, right, skipped=last))
-                    moves.update(self._traverse_just_left(r + step, row, step, color, right - 1, skipped=last))
-                    moves.update(self._traverse_just_right(r + step, row, step, color, right + 1, skipped=last))
-                break
-
-            last = [current]
-            right += 1
-        return moves
-
-
-    def _traverse_vert(self, start, stop, step, color, vert, skipped=[]):
-        moves = {}
-        last = []
-        for r in range(start, stop, step):
-            if vert < 0:
-                break
-            current = self.board[r][vert]
-            if current == 0:
-                if skipped and not last:
-                    break  # Valida que si ya salto y no hay otra ficha para saltar no mueve otra ficha
-                elif skipped:
-                    moves[(r, vert)] = last + skipped
-                else:
-                    moves[(r, vert)] = last
-                if last:
-                    if step == -1:
-                        row = max(r - 3, 0)
-                    else:
-                        row = min(r + 3, ROWS)
-
-                    moves.update(self._traverse_left(r + step, row, step, color, vert - 1, skipped=last))
-                    moves.update(self._traverse_right(r + step, row, step, color, vert + 1, skipped=last))
-                    moves.update(self._traverse_right(r + step, row, step, color, vert, skipped=last))
-                    moves.update(self._traverse_just_left(r + step, row, step, color, vert - 1, skipped=last))
-                    moves.update(self._traverse_just_right(r + step, row, step, color, vert + 1, skipped=last))
-                break
-
-            last = [current]
-            vert += 1
-        return moves
-
-    def _traverse_just_left(self, start, stop, step, color, left, skipped=[]):
-        moves = {}
-        last = []
-        for r in range(start, stop, step):
-            if left <0:
-                break
-            current = self.board[r][left]
-            if current == 0:
-                if skipped and not last:
-                    break  # Valida que si ya salto y no hay otra ficha para saltar no mueve otra ficha
-                elif skipped:
-                    moves[(r, left)] = last + skipped
-                else:
-                    moves[(r, left)] = last
-                if last:
-                    if step == -1:
-                        row = max(r - 3, 0)
-                    else:
-                        row = min(r + 3, ROWS)
-
-                    moves.update(self._traverse_left(r + step, row, step, color, left - 1, skipped=last))
-                    moves.update(self._traverse_right(r + step, row, step, color, left + 1, skipped=last))
-                    moves.update(self._traverse_vert(r + step, row, step, color, left, skipped=last))
-                    moves.update(self._traverse_just_left(r + step, row, step, color, left - 1, skipped=last))
-                    moves.update(self._traverse_just_right(r + step, row, step, color, left + 1, skipped=last))
-
-                break
-
-            last = [current]
-            left += 1
-        return moves
-
-    def _traverse_just_right(self, start, stop, step, color, right, skipped=[]):
-        moves = {}
-        last = []
-        for r in range(start, stop, step):
-            if right >= COLS:
-                break
-            current = self.board[r][right]
-            if current == 0:
-                if skipped and not last:
-                    break  # Valida que si ya salto y no hay otra ficha para saltar no mueve otra ficha
-                elif skipped:
-                    moves[(r, right)] = last + skipped
-                else:
-                    moves[(r, right)] = last
-                if last:
-                    if step == -1:
-                        row = max(r - 3, 0)
-                    else:
-                        row = min(r + 3, ROWS)
-
-                    moves.update(self._traverse_left(r + step, row, step, color, right - 1, skipped=last))
-                    moves.update(self._traverse_right(r + step, row, step, color, right + 1, skipped=last))
-                    moves.update(self._traverse_vert(r + step, row, step, color, right, skipped=last))
-                    moves.update(self._traverse_just_left(r + step, row, step, color, right - 1, skipped=last))
-                    moves.update(self._traverse_just_right(r + step, row, step, color, right + 1, skipped=last))
-
-                break
-
-            last = [current]
-            right += 1
-        return moves
+                    if idx == 1 or idx == 3:
+                        colMove+=1
+                    if idx == 2 or idx == 4:
+                        colMove-=1
+                    if idx == 0 or idx == 1:
+                        rowMove-=1
+                    if idx == 4 or idx == 5:
+                        rowMove+=1
+                    if self.is_inside_board(rowMove, colMove): # si esta fuera del tablero, pass
+                        if self.board[rowMove][colMove] == 0 and not((rowMove, colMove) in moves):
+                            moves[(rowMove, colMove)] = True
+                            self.check_jump(rowMove, colMove, moves)

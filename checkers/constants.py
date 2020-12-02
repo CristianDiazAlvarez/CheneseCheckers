@@ -2,7 +2,7 @@ import pygame
 
 WIDTH, HEIGHT = 1000, 1000
 
-ROWS, COLS = 13, 13
+ROWS, COLS = 9, 9
 
 SQUARE_SIZE = WIDTH//COLS
 
