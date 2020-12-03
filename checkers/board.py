@@ -22,6 +22,24 @@ class Board:
                 pygame.draw.rect(win, GREY, (row * SQUARE_SIZE, col * SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE))
                 pygame.draw.circle(win, WHITE, ((row * SQUARE_SIZE) + SQUARE_SIZE//2, (col * SQUARE_SIZE) + SQUARE_SIZE//2), radius)
 
+    def  evaluarte(self):
+        # Inventese algo chimba
+        red_pieces = self.get_all_pieces(RED)
+        blue_pieces = self.get_all_pieces(BLUE)
+        red_distance = blue_distance = 0
+        for i in range(len(red_pieces)):
+            red_distance += abs((red_pieces[i].x-0)) + abs((red_pieces[i].y-0))
+            blue_distance += abs((blue_pieces[i].x-SQUARE_SIZE)) + abs((blue_pieces[i].y-SQUARE_SIZE))
+        return blue_distance//10 - red_distance//10
+
+    def get_all_pieces(self, color):
+        pieces =[]
+        for row in self.board:
+            for piece in row:
+                if piece != 0 and piece.color == color:
+                    pieces.append(piece)
+        return pieces
+
     def move(self, piece, row, col):
         #  Se intercambian las posiciones
         self.board[piece.row][piece.col], self.board[row][col] = self.board[row][col], self.board[piece.row][piece.col]
@@ -70,7 +88,6 @@ class Board:
         moves = {}
         col =  piece.col
         row = piece.row
-        print(piece.color)
         
         neighborhood = self.get_neighborhood(row, col)
 
@@ -143,3 +160,48 @@ class Board:
                         if self.board[rowMove][colMove] == 0 and not((rowMove, colMove) in moves):
                             moves[(rowMove, colMove)] = True
                             self.check_jump(rowMove, colMove, moves)
+
+    def validate_winner(self, row, col, color):
+        piece = self.get_piece(row, col)
+        if piece != 0:
+            if piece.color == color:
+                return True
+        return False
+
+    def winner(self):
+        r0_c0 = self.validate_winner(0, 0, RED)
+        r1_c0 = self.validate_winner(1, 0, RED)
+        r0_c1 = self.validate_winner(0, 1, RED)
+        r1_c1 = self.validate_winner(1, 1, RED)
+        r0_c2 = self.validate_winner(0, 2, RED)
+        r2_c0 = self.validate_winner(2, 0, RED)
+        r0_c3 = self.validate_winner(0, 3, RED)
+        r3_c0 = self.validate_winner(3, 0, RED)
+        r2_c1 = self.validate_winner(2, 1, RED)
+        r1_c2 = self.validate_winner(1, 2, RED)
+        if r0_c0 and r1_c0 and r0_c1 and r1_c1 and r0_c2 and r2_c0 and r0_c3 and r3_c0 and r2_c1 and r1_c2:
+            print('#########################################')
+            print('######### Gano el Jugador ROJO ##########')
+            print('#########################################')
+            return RED
+
+        r8_c8 = self.validate_winner(8, 8, BLUE)
+        r7_c8 = self.validate_winner(7, 8, BLUE)
+        r8_c7 = self.validate_winner(8, 7, BLUE)
+        r7_c7 = self.validate_winner(7, 7, BLUE)
+        r8_c6 = self.validate_winner(8, 6, BLUE)
+        r6_c8 = self.validate_winner(6, 8, BLUE)
+        r8_c5 = self.validate_winner(8, 5, BLUE)
+        r5_c8 = self.validate_winner(5, 8, BLUE)
+        r6_c7 = self.validate_winner(6, 7, BLUE)
+        r7_c6 = self.validate_winner(7, 6, BLUE)
+        if r8_c8 and r7_c8 and r8_c7 and r7_c7 and r8_c6 and r6_c8 and r8_c5 and r5_c8 and r6_c7 and r7_c6:
+            print('#########################################')
+            print('######### Gano el Jugador AZUL ##########')
+            print('#########################################')
+            return BLUE
+
+        return None
+
+
+
