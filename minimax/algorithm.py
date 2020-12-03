@@ -6,13 +6,13 @@ BLUE = (0, 0, 255)
 
 def minimax(board, depth, max_player, game):
     if depth == 0 or board.winner() != None: # Evalua la profundidad del arbol de decision o si ya se gano el juego
-        return board.evaluarte(), board
+        return board.evaluateEuc(), board
 
     if max_player:
         maxEval = float('-inf')
         best_move = None
         for move in get_all_moves(board, BLUE, game):
-            evaluation = minimax(move, depth-1, False, game)[0]
+            evaluation = minimax(move, depth-1, False, game)[0]               
             maxEval = max(maxEval, evaluation)
             if maxEval == evaluation:
                 best_move = move
@@ -37,7 +37,7 @@ def get_all_moves(board, color, game):
     for piece in board.get_all_pieces(color):
         valid_moves = board.get_valid_moves(piece)
         for move, skip in valid_moves.items(): # skip no se necesita en damas chinas
-            draw_moves(game, board, piece)
+            # draw_moves(game, board, piece)
             temp_board = deepcopy(board)
             temp_piece = temp_board.get_piece(piece.row, piece.col)
             new_board = simulate_move(temp_piece, move, temp_board, game, skip)

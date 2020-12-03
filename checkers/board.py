@@ -1,4 +1,5 @@
 import pygame
+import math  
 from .constants import BLACK, ROWS, COLS, RED, WHITE, GREY, BLUE, SQUARE_SIZE
 from .piece import Piece
 
@@ -31,6 +32,21 @@ class Board:
             red_distance += abs((red_pieces[i].x-0)) + abs((red_pieces[i].y-0))
             blue_distance += abs((blue_pieces[i].x-SQUARE_SIZE)) + abs((blue_pieces[i].y-SQUARE_SIZE))
         return blue_distance//10 - red_distance//10
+
+
+    def evaluateEuc(self):
+        # Inventese algo chimba
+        red_pieces = self.get_all_pieces(RED)
+        blue_pieces = self.get_all_pieces(BLUE)
+        red_distance = blue_distance = 0
+        for i in range(len(red_pieces)):
+            redPiece = red_pieces[i]
+            bluePiece = blue_pieces[i]
+            blueD = math.sqrt( pow((COLS - bluePiece.col), 2) + pow(ROWS - bluePiece.row, 2))
+            redD = math.sqrt( pow(redPiece.col, 2) + pow(redPiece.row, 2)) 
+            red_distance += redD
+            blue_distance += blueD
+        return 1/(blue_distance + COLS) - 1 /(red_distance + COLS)
 
     def get_all_pieces(self, color):
         pieces =[]
@@ -88,18 +104,8 @@ class Board:
         moves = {}
         col =  piece.col
         row = piece.row
-        
         neighborhood = self.get_neighborhood(row, col)
-
         moves.update(self._traverse(neighborhood))
-
-        #moves.update(self._traverse_right(row - 1, max(row - 3, -1), -1, piece.color, right))
-        #moves.update(self._traverse_left(row + 1, min(row + 3, ROWS), 1, piece.color, left))
-        #moves.update(self._traverse_Y(row, max(row - 3, -1), -1, piece.color, col))
-        #moves.update(self._traverse_Y(row, max(row - 3, -1), 1, piece.color, col))
-        #moves.update(self._traverse_Y(row, min(row + 3, ROWS), 1, piece.color, col))
-        #moves.update(self._traverse_Y(row, min(row + 3, ROWS), -1, piece.color, col))
-
         return moves
 
     def _traverse(self, neighborhood, skipped=[]):
@@ -128,10 +134,6 @@ class Board:
                         if self.board[row][col] == 0 and not((row, col) in moves):
                             moves[(row, col)] = True
                             self.check_jump(row, col, moves)
-                
-                
-                #jump
-                #check more jumps in new position
 
         return moves
 
