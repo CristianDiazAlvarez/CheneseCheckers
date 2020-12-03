@@ -7,6 +7,8 @@ from .piece import Piece
 class Board:
     OUTLINE = 2
     PADDING = 10
+    WINNINGDISTANCE = 12 + math.sqrt(2) + 2 * math.sqrt(5)
+    EPSILON = 0.0001
 
     def __init__(self):
         self.board = []
@@ -46,6 +48,13 @@ class Board:
             redD = math.sqrt( pow(redPiece.col, 2) + pow(redPiece.row, 2)) 
             red_distance += redD
             blue_distance += blueD
+
+        if(self.WINNINGDISTANCE - self.EPSILON <= blue_distance and blue_distance <= self.WINNINGDISTANCE + self.EPSILON):
+            blue_distance = 0
+        
+        if(self.WINNINGDISTANCE - self.EPSILON <= red_distance and red_distance <= self.WINNINGDISTANCE + self.EPSILON):
+            red_distance = 0
+        
         return 1/(blue_distance + COLS) - 1 /(red_distance + COLS)
 
     def get_all_pieces(self, color):
